@@ -8,6 +8,9 @@
 #include "Blueprint/UserWidget.h"
 #include "UE5_GAS_Test.h"
 #include "Widgets/Input/SVirtualJoystick.h"
+#include "Widget/PlayerHUDWidget.h"
+#include "AbilitySystemGlobals.h"
+#include "AbilitySystemComponent.h"
 
 void AUE5_GAS_TestPlayerController::BeginPlay()
 {
@@ -31,6 +34,30 @@ void AUE5_GAS_TestPlayerController::BeginPlay()
 		}
 
 	}
+}
+
+void AUE5_GAS_TestPlayerController::OnPossess(APawn* InPawn)
+{
+	Super::OnPossess(InPawn);
+
+	if (!IsLocalPlayerController() || !PlayerHUDClass)
+	{
+		return;
+	}
+
+	UAbilitySystemComponent* ASC = UAbilitySystemGlobals::GetAbilitySystemComponentFromActor(InPawn);
+	if (!ASC)
+	{
+		return;
+	}
+
+	if (!PlayerHUDWidget)
+	{
+		PlayerHUDWidget = CreateWidget<UPlayerHUDWidget>(this, PlayerHUDClass);
+		PlayerHUDWidget->AddToPlayerScreen(0);
+	}
+
+	PlayerHUDWidget->InitWithASC(ASC);
 }
 
 void AUE5_GAS_TestPlayerController::SetupInputComponent()

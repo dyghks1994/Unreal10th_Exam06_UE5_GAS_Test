@@ -11,6 +11,8 @@
 #include "EnhancedInputSubsystems.h"
 #include "InputActionValue.h"
 #include "UE5_GAS_Test.h"
+#include "AbilitySystemComponent.h"
+#include "PlayerAttributeSet.h"
 
 AUE5_GAS_TestCharacter::AUE5_GAS_TestCharacter()
 {
@@ -48,6 +50,9 @@ AUE5_GAS_TestCharacter::AUE5_GAS_TestCharacter()
 
 	// Note: The skeletal mesh and anim blueprint references on the Mesh component (inherited from Character) 
 	// are set in the derived blueprint asset named ThirdPersonCharacter (to avoid direct content references in C++)
+
+	AbilitySystemComponent = CreateDefaultSubobject<UAbilitySystemComponent>(TEXT("AbilitySystemComponent"));
+	PlayerAttributeSet = CreateDefaultSubobject<UPlayerAttributeSet>(TEXT("PlayerAttributeSet"));
 }
 
 void AUE5_GAS_TestCharacter::SetupPlayerInputComponent(UInputComponent* PlayerInputComponent)
@@ -65,6 +70,9 @@ void AUE5_GAS_TestCharacter::SetupPlayerInputComponent(UInputComponent* PlayerIn
 
 		// Looking
 		EnhancedInputComponent->BindAction(LookAction, ETriggerEvent::Triggered, this, &AUE5_GAS_TestCharacter::Look);
+
+		// Fireball
+		EnhancedInputComponent->BindAction(FireballAction, ETriggerEvent::Started, this, &AUE5_GAS_TestCharacter::ActivateFireball);
 	}
 	else
 	{
@@ -88,6 +96,14 @@ void AUE5_GAS_TestCharacter::Look(const FInputActionValue& Value)
 
 	// route the input
 	DoLook(LookAxisVector.X, LookAxisVector.Y);
+}
+
+void AUE5_GAS_TestCharacter::ActivateFireball()
+{
+	if (FireballAbilityClass)
+	{
+		AbilitySystemComponent->TryActivateAbilityByClass(FireballAbilityClass);
+	}
 }
 
 void AUE5_GAS_TestCharacter::DoMove(float Right, float Forward)
@@ -130,4 +146,16 @@ void AUE5_GAS_TestCharacter::DoJumpEnd()
 {
 	// signal the character to stop jumping
 	StopJumping();
+}
+
+void AUE5_GAS_TestCharacter::PossessedBy(AController* NewController)
+{
+	Super::PossessedBy(NewController);
+
+	AbilitySystemComponent->InitAbilityActorInfo(this, this);
+
+	if (FireballAbilityClass && !AbilitySystemComponent->FindAbilitySpecFromClass(FireballAbilityClass))
+	{
+		AbilitySystemComponent->GiveAbility(FGameplayAbilitySpec(FireballAbilityClass, 1));
+	}
 }
